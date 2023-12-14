@@ -2,8 +2,6 @@
 
 from flask import Flask, render_template, url_for
 from datetime import datetime
-
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -39,7 +37,27 @@ class User(db.Model):
 def return_user():
     try:
         users = User.query.all()
-        user_list = [{'id': user.id, 'name': user.name, 'username': user.username, 'email': user.email, 'mobile': user.mobile} for user in users]
+        # user_list = [{'id': user.id, 'name': user.name, 'email': user.email, 'mobile': user.mobile, } for user in users]
+        
+        user_list = [
+    {
+        'id': user.id,
+        'name': user.name,
+        'password': user.password,
+        'email': user.email,
+        'mobile': user.mobile,
+        'aadhaar': user.aadhaar,
+        'address': user.address,
+        'disable': user.disable,
+        'dob': user.dob,
+        'education': user.education,
+        'pj_location': user.pj_location,
+        'skills': user.skills.split(',') if user.skills else [],
+        'state': user.state
+    }
+    for user in users
+]
+
         return jsonify({'users': user_list, 'message': 'success'})
     except Exception as e:
         return jsonify({'error': 'Internal Server Error'}), 500
@@ -90,6 +108,52 @@ def add_user():
             print(e)
             db.session.rollback()
             return jsonify({'error': 'Internal Server Error'}), 500
+
+
+
+
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    if request.method == 'POST':
+        data = request.get_json()
+
+        # Validate required fields
+        required_fields = ['email', 'password']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+
+        email = data['email']
+        password = data['password']
+        
+
+        # Check if the user exists and the password is correct
+        user = User.query.filter_by(email=email, password=password).first()
+        id = user.id
+
+        if user:
+            return jsonify({'message': 'Login successful', 'id': id}), 200
+        else:
+            return jsonify({'error': 'Invalid email or password'}), 401
+
+
+
+
+@app.route('/api/resource/<custom_id>', methods=['GET'])
+def get_resource(custom_id):
+    # Perform logic to retrieve resource based on the custom ID
+    # For example, you can query a database
+    user = User.query.get(custom_id)
+    resource_data = {'id': custom_id, 'email': user.email, 'mobile': user.mobile, 'name': user.name, 'password': user.password, 'aadhaar': user.aadhaar, 'address': user.address, 'disable': user.disable, 'dob': user.dob, 'education': user.education, 'pj_location': user.pj_location, 'skills': user.skills, 'state': user.state}
+    
+    # Return the resource data as JSON
+    return jsonify(resource_data)
+
+
+
+
 
 if __name__ == '__main__':
     db.create_all()
