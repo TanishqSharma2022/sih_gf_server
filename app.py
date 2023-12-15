@@ -7,6 +7,12 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 from flask_cors import CORS
+from supabase import create_client, Client
+import supabase
+
+url: str = 'https://kaqvgzyugazqgjztgdac.supabase.co'
+key: str = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthcXZnenl1Z2F6cWdqenRnZGFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDI1NzMxMjgsImV4cCI6MjAxODE0OTEyOH0.ArTPJlFmrARrMPMajee4oYXx7Evng1OGXVP3gKiS4rE'
+supabase: Client = create_client(url, key)
 
 app = Flask(__name__)
 CORS(app)
@@ -100,6 +106,7 @@ def add_user():
         try:
             db.session.add(new_user)
             db.session.commit()
+            count = supabase.table('specsy6').insert({ "name": new_user.name , "password": new_user.password , "email" : new_user.email , "mobile" : new_user.mobile , "aadhaar" : new_user.aadhaar , "address" : new_user.address , "disable" : new_user.disable , "dob" : new_user.dob , "education" : new_user.education , "pj_location" : new_user.pj_location , "skills" : new_user.skills , "state" : new_user.state}).execute()
             return jsonify({'message': 'User added successfully'}), 201
         except IntegrityError as e:
             db.session.rollback()
