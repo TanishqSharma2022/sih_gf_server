@@ -19,7 +19,7 @@ supabase: Client = create_client(url, key)
 app = Flask(__name__)
 CORS(app)
 db = SQLAlchemy()
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:LENMwwPkbxc4U9rD@db.mabfnfptjihwtnyenelo.supabase.co:5432/postgres'
 app.config['SECRET_KEY'] = 'specsysix'
 db.init_app(app)
 app.app_context().push()
@@ -177,7 +177,7 @@ def gender_analytics_donut():
     
     dic_gender_count = {}
     
-    text1= text("Select gender,count(*) as count from user group by gender")
+    text1= text("Select gender,count(*) as count from sih group by gender")
     
     
     result  = db.session.execute(text1)
