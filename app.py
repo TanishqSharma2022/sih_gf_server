@@ -9,6 +9,8 @@ from sqlalchemy.exc import IntegrityError
 from flask_cors import CORS
 from supabase import create_client, Client
 import supabase
+from sqlalchemy.sql import text
+import seaborn as sns
 
 url: str = 'https://kaqvgzyugazqgjztgdac.supabase.co'
 key: str = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthcXZnenl1Z2F6cWdqenRnZGFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDI1NzMxMjgsImV4cCI6MjAxODE0OTEyOH0.ArTPJlFmrARrMPMajee4oYXx7Evng1OGXVP3gKiS4rE'
@@ -33,6 +35,7 @@ class User(db.Model):
     address = db.Column(db.String(100), nullable=False)
     disable = db.Column(db.String(5), nullable=False)
     dob = db.Column(db.String(20), nullable=False)
+    gender = db.Column(db.String(20), nullable=False)
     education = db.Column(db.String(20), nullable=False)
     pj_location = db.Column(db.String(20), nullable=False)
     skills = db.Column(db.String(255), nullable=True)  # Assuming skills can be stored as a comma-separated string
@@ -67,6 +70,12 @@ def return_user():
         return jsonify({'users': user_list, 'message': 'success'})
     except Exception as e:
         return jsonify({'error': 'Internal Server Error'}), 500
+
+
+@app.route('/auth/callback' , methods=['POST'])
+def callback(data):
+    print(data)
+    return data
 
 
 @app.route('/add_user', methods=['POST'])
@@ -158,6 +167,41 @@ def get_resource(custom_id):
     # Return the resource data as JSON
     return jsonify(resource_data)
 
+
+@app.route('/analytics/gender')
+def gender_analytics_donut():
+    # need to get data, 
+    
+    # query database for tuple stats <stop,route,onboarding/eliding/count>
+    #prepare onboarding/eliding array and prepare toggle on frontend
+    
+    dic_gender_count = {}
+    
+    text1= text("Select gender,count(*) as count from user group by gender")
+    
+    
+    result  = db.session.execute(text1)
+    print(result)
+    
+    dic_gender_analytics_count = {}
+    labels_arr = []
+    counts_arr =  []
+    
+    for row in result:
+        labels_arr += [row.gender]
+        counts_arr += [row.count]
+    
+
+    pallete = sns.color_palette(None,len(labels_arr))
+    
+    data = {
+        'data': counts_arr
+         
+         ,
+            
+    }
+    # #print(data)
+    return jsonify(data)
 
 
 
