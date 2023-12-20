@@ -1,7 +1,7 @@
 # app.py
 
 from flask import Flask, render_template, url_for
-from datetime import datetime
+from datetime import datetime, date
 from flask_login import UserMixin
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -11,6 +11,7 @@ from supabase import create_client, Client
 import supabase
 from sqlalchemy.sql import text
 import seaborn as sns
+from collections import defaultdict, Counter
 
 url: str = 'https://kaqvgzyugazqgjztgdac.supabase.co'
 key: str = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthcXZnenl1Z2F6cWdqenRnZGFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDI1NzMxMjgsImV4cCI6MjAxODE0OTEyOH0.ArTPJlFmrARrMPMajee4oYXx7Evng1OGXVP3gKiS4rE'
@@ -25,6 +26,7 @@ db.init_app(app)
 app.app_context().push()
 
 class User(db.Model):
+    __tablename__ = 'sih'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     # username = db.Column(db.String(20), unique=True, nullable=False)
@@ -41,6 +43,9 @@ class User(db.Model):
     skills = db.Column(db.String(255), nullable=True)  # Assuming skills can be stored as a comma-separated string
     state = db.Column(db.String(20), nullable=False)
 
+@app.route('/')
+def welcome():
+    return "Hello"
 
 @app.route('/get_user', methods=['GET'])
 def return_user():
@@ -181,7 +186,7 @@ def gender_analytics_donut():
     
     
     result  = db.session.execute(text1)
-    print(result)
+    #print(result)
     
     dic_gender_analytics_count = {}
     labels_arr = []
@@ -193,18 +198,110 @@ def gender_analytics_donut():
     
 
     pallete = sns.color_palette(None,len(labels_arr))
+
+    # #print(data)
+    return jsonify(counts_arr)
+
+
+@app.route('/analytics/age')
+def age_analytics():
+    # need to get data, 
     
-    data = {
-        'data': counts_arr
+    # query database for tuple stats <stop,route,onboarding/eliding/count>
+    #prepare onboarding/eliding array and prepare toggle on frontend
+        
+    text1= text( "Select  DATE_PART('year', now()::date)-DATE_PART('year', dob) as age,count(*) from sih  group by age;")
+    
+    
+    result  = db.session.execute(text1)
+    
+
+    arr = [list(i) for i in result]
+    
+    age_data = {
+        '18-25': 0,
+        '25-30': 0,
+        '30-35': 0,
+        '35-40': 0,
+        '40-45': 0,
+        '45-50': 0,
+        '50+': 0,
          
-         ,
             
     }
-    # #print(data)
-    return jsonify(data)
+    for i in arr:
+        a,b = i
+        if a > 18 and a<=25:
+            age_data['18-25']+=b
+        elif a > 25 and a<=30:
+            age_data['25-30']+=b
+        elif a > 30 and a<=35:
+            age_data['30-35']+=b
+        elif a > 35 and a<=40:
+            age_data['35-40']+=b
+        elif a > 40 and a<=45:
+            age_data['40-45']+=b
+        elif a > 45 and a<=50:
+            age_data['45-50']+=b
+        elif a > 50:
+            age_data['50+']+=b
+    return jsonify(age_data)
+    #print(result)
+    # age_arr = []
+    # rows = result.fetchall()
+    # for row in rows:
+    #     dob = row[0]
+    #     birth_date = datetime.strptime(str(dob), '%Y-%m-%d').date()
+    #     today = date.today()
+    #     age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+    #     print("Age:", age)
+    #     age_arr.append(age)
+    
+    # age_arr.sort()
+    
+    # def group_ages(age_array):
+    #     age_ranges = [(18, 25), (25, 30), (30, 35), (35, 40), (40, 45), (45, 50), (50, float('inf'))]
+    #     age_counter = Counter()
+    #     for age in age_array:
+    #         for lower, upper in age_ranges:
+    #             if lower <= age < upper:
+    #                 age_counter[(lower, upper)] += 1
+    #                 break
+
+    #     return age_counter
+
+    # result = group_ages(age_arr)
+
+    # for age_range, count in result.items():
+    #     lower, upper = age_range
+    #     if upper == float('inf'):
+    #         print(f"Ages {lower} and above: {count}")
+    #     else:
+    #         print(f"Ages {lower}-{upper - 1}: {count}")
+
+    # result_dict = {}
+    # age_counter=Counter()
+    # for age_range, count in age_counter.items():
+    #     lower, upper = age_range
+    #     if upper == float('inf'):
+    #         result_dict[f"Ages {lower} and above"] = count
+    #     else:
+    #         result_dict[f"Ages {lower}-{upper - 1}"] = count
+
+    # return json.dumps(result_dict, indent=2)
+    # # 18-25,25-30,30-35,35-40,40-45,45-50,50+
+    # #series=interval vals label= count
+    # # #print(data)
 
 
-
+@app.route('/analytics/usersdata')
+def userdata_analytics():
+    from sqlalchemy.orm import sessionmaker
+    Session = sessionmaker(bind = db.engine)
+    session = Session()
+    result = session.query(User).count()
+    print(result)
+    return result
 
 if __name__ == '__main__':
     db.create_all()
